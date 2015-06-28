@@ -1307,6 +1307,15 @@ CUtxoDB::Analyse (unsigned& nUtxo, int64_t& amount)
   return true;
 }
 
+bool
+CUtxoDB::GetUtxoSet (OutPointSet& res)
+{
+  CCriticalBlock lock(cs_main);
+
+  res.clear ();
+  return InternalRescan (true, &res);
+}
+
 /* ************************************************************************** */
 
 //
