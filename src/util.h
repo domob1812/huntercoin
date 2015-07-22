@@ -291,11 +291,32 @@ protected:
 public:
     explicit CCriticalSection() { }
     ~CCriticalSection() { }
-    void Enter() { mutex.lock(); }
-    void Leave() { mutex.unlock(); }
-    bool TryEnter() { return mutex.try_lock(); }
+
+    void Enter()
+    {
+      if (fDebug)
+        printf("LOCKING %s at %s (%s:%d)\n", lockName, func, pszFile, nLine);
+      mutex.lock();
+    }
+
+    void Leave()
+    {
+      if (fDebug)
+        printf("UNLOCKING %s at %s (%s:%d)\n", lockName, func, pszFile, nLine);
+      mutex.unlock();
+    }
+
+    bool TryEnter()
+    {
+      if (fDebug)
+        printf("TRY-LOCKING %s at %s (%s:%d)\n", lockName, func, pszFile, nLine);
+      return mutex.try_lock();
+    }
+
 #endif
 public:
+    const char* lockName;
+    const char* func;
     const char* pszFile;
     int nLine;
 };
@@ -316,7 +337,7 @@ public:
 // The compiler will optimise away all this loop junk.
 #define CRITICAL_BLOCK(cs)     \
     for (bool fcriticalblockonce=true; fcriticalblockonce; assert(("break caught by CRITICAL_BLOCK!", !fcriticalblockonce)), fcriticalblockonce=false)  \
-    for (CCriticalBlock criticalblock(cs); fcriticalblockonce && (cs.pszFile=__FILE__, cs.nLine=__LINE__, true); fcriticalblockonce=false, cs.pszFile=NULL, cs.nLine=0)
+    for (CCriticalBlock criticalblock(cs); fcriticalblockonce && (cs.lockName = #cs, cs.func=__func__, cs.pszFile=__FILE__, cs.nLine=__LINE__, true); fcriticalblockonce=false, cs.pszFile=NULL, cs.nLine=0)
 
 class CTryCriticalBlock
 {
